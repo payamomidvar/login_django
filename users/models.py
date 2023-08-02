@@ -37,7 +37,7 @@ class UserManger(BaseUserManager):
                 username = email.split('@', 1)[0]
             while User.objects.filter(username=username).exists():
                 username += str(random.randint(10, 99))
-            return self._create_user(username, email, password, False, False, **extra_fields)
+        return self._create_user(username, email, password, False, False, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
