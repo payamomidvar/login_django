@@ -21,9 +21,9 @@ class MyUserAdmin(UserAdmin):
         })
     )
 
-    list_display = ('username', 'email', 'is_staff')
+    list_display = ('id', 'username', 'email', 'is_staff')
     search_fields = ('username__exact',)
-    ordering = ('-id',)
+    ordering = ('id',)
 
 
 admin.site.unregister(Group)
