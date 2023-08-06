@@ -10,38 +10,41 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 class UserManger(BaseUserManager):
     use_in_migrations = True
 
-    def _create_user(self, username, email, password, is_staff, is_superuser, **extra_fields):
+    def create_user(self, username, email, password, **extra_fields):
         now = timezone.now()
-        if not username:
-            raise ValueError('The given username must be set')
+        if not email:
+            raise ValueError('The given email must be set')
+
         email = self.normalize_email(email)
-        user = self.model(username=username,
-                          email=email,
-                          is_staff=is_staff,
-                          is_active=True,
-                          is_superuser=is_superuser,
-                          date_joined=now, **extra_fields)
-
-        if not extra_fields.get('no_password'):
-            user.set_password(password)
-
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, username, email, password, **extra_fields):
-        return self._create_user(username, email, password, True, True, **extra_fields)
-
-    def create_user(self, username=None, email=None, password=None, **extra_fields):
         if username is None:
             if email:
                 username = email.split('@', 1)[0]
             while User.objects.filter(username=username).exists():
                 username += str(random.randint(10, 99))
-        return self._create_user(username, email, password, False, False, **extra_fields)
+
+        user = self.model(username=username,
+                          email=email,
+                          is_active=True,
+                          date_joined=now, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        username = email.split('@', 1)[0]
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError(_('Superuser must have is_staff=True.'))
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError(_('Superuser must have is_superuser=True.'))
+
+        return self.create_user(username, email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(_('username'), max_length=32, unique=True,
+    username = models.CharField(_('username'), max_length=32,
                                 help_text=_(
                                     'Required. 30 characters or fewer starting with a letter.'
                                     ' Letters, digits and underscore only.'),
@@ -52,9 +55,6 @@ class User(AbstractBaseUser, PermissionsMixin):
                                                                 'and underscore characters.'),
                                                               'invalid'),
                                 ],
-                                error_messages={
-                                    'unique': _('A user with that username already exists.')
-                                }
                                 )
     email = models.EmailField(_('email address'), unique=True)
     is_staff = models.BooleanField(_('Staff status'), default=False,
@@ -68,8 +68,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_seen = models.DateTimeField(_('last seen date'), null=True)
 
     objects = UserManger()
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     class Meta:
         db_table = 'users'
@@ -77,6 +77,4 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('users')
 
     def save(self, *args, **kwargs):
-        if self.email is not None and self.email.strip() == '':
-            self.email = None
         super().save(*args, **kwargs)

@@ -3,8 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import check_password
 
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
+from .serializers import TokenObtainPairSerializer
 
 
 class RegisterView(APIView):
@@ -40,3 +43,7 @@ class LoginView(APIView):
         except User.DoesNotExist:
             return Response({'detail': 'User was not registered!'},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = TokenObtainPairSerializer
