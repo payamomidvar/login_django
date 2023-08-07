@@ -1,13 +1,14 @@
+from django.utils import timezone
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import check_password
-
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
-from .serializers import TokenObtainPairSerializer
+from .serializers import TokenObtainPairSerializer, UserSerializer
 
 
 class RegisterView(APIView):
@@ -47,3 +48,31 @@ class LoginView(APIView):
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenObtainPairSerializer
+
+
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        old_password = request.data['currentPassword']
+        new_password = request.data['newPassword']
+        repeat_new_password = request.data['repeatNewPassword']
+
+        user = User.objects.get(id=pk)
+        if not check_password(old_password, user.password):
+            return Response({'detail': 'password is wrong'})
+        if new_password != repeat_new_password:
+            return Response({'detail': 'New password and repeating new password are not the same'})
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'detail': 'password is changed'}, status=status.HTTP_200_OK)
