@@ -1,4 +1,7 @@
-from django.utils import timezone
+import secrets
+import string
+
+from django.core.mail import EmailMessage
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -76,3 +79,32 @@ class UserView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({'detail': 'password is changed'}, status=status.HTTP_200_OK)
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data['email']
+        if not email:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'detail': 'User is not exist!'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        letters = string.ascii_letters
+        digits = string.digits
+        special_chars = string.punctuation
+        alphabet = letters + digits + special_chars
+        password = ''
+        for i in range(8):
+            password += ''.join(secrets.choice(alphabet))
+        user.set_password(password)
+        user.save()
+        EmailMessage(
+            "Subject here",
+            f'New password! This is {password}',
+            "xacehe3014@tipent.com",
+            (email,)
+        )
+
+        return Response({"message": "new password is sent"}, status=status.HTTP_201_CREATED)
