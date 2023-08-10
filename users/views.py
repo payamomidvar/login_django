@@ -18,9 +18,13 @@ class RegisterView(APIView):
     def post(self, request):
         username = request.data['username']
         password = request.data['password']
+        repeat_password = request.data['repeatPassword']
         email = request.data['email']
         if not password and not email:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        if password != repeat_password:
+            return Response({'detail': 'password and repeat password are not the same thing!'})
+
         try:
             User.objects.get(email=email)
             return Response({'detail': 'User already registered!'},
@@ -74,7 +78,7 @@ class UserView(APIView):
         if not check_password(old_password, user.password):
             return Response({'detail': 'password is wrong'})
         if new_password != repeat_new_password:
-            return Response({'detail': 'New password and repeating new password are not the same'})
+            return Response({'detail': 'New password and repeating new password are not the same thing!'})
 
         user.set_password(new_password)
         user.save()
