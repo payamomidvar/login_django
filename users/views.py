@@ -36,7 +36,7 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    def get(self, request):
+    def post(self, request):
         email = request.data['email']
         password = request.data['password']
         if not password and not email:
