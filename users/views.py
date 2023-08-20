@@ -1,5 +1,6 @@
 import secrets
 import string
+import requests
 
 from django.core.mail import EmailMessage
 
@@ -12,6 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
 from .serializers import TokenObtainPairSerializer, UserSerializer
+from settings import *
 
 
 class RegisterView(APIView):
@@ -44,7 +46,10 @@ class LoginView(APIView):
         try:
             user = User.objects.get(email=request.data['email'])
             if check_password(password, user.password):
-                return Response(status=status.HTTP_200_OK)
+                token = requests.post(f'http://{ip_address}:8000/users/token/', params=request.POST,
+                                      data={'email': email, 'password': password})
+                json_result = token.json()
+                return Response({'access': json_result['access']}, status=status.HTTP_200_OK)
             else:
                 return Response({'detail': 'password is wrong'},
                                 status=status.HTTP_400_BAD_REQUEST)
