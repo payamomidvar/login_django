@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
 from .serializers import TokenObtainPairSerializer, UserSerializer
-from settings import *
+from env.settings import *
 
 
 class RegisterView(APIView):
