@@ -10,6 +10,7 @@ from rest_framework import status
 from django.contrib.auth.hashers import check_password
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import User
 from .serializers import TokenObtainPairSerializer, UserSerializer
@@ -62,24 +63,32 @@ class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenObtainPairSerializer
 
 
+def get_id_by_token(request):
+    access_token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+    token = AccessToken(access_token)
+    return token.payload['user_id']
+
+
 class UserView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
+    def get(self, request):
         try:
-            user = User.objects.get(id=pk)
+            user_id = get_id_by_token(request)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
-    def patch(self, request, pk):
+    def patch(self, request):
         old_password = request.data['currentPassword']
         new_password = request.data['newPassword']
         repeat_new_password = request.data['repeatNewPassword']
 
-        user = User.objects.get(id=pk)
+        user_id = get_id_by_token(request)
+        user = User.objects.get(id=user_id)
         if not check_password(old_password, user.password):
             return Response({'detail': 'password is wrong'})
         if new_password != repeat_new_password:

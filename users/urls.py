@@ -12,8 +12,8 @@ urlpatterns = [
     path('users/token/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('users/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    path('user/<int:pk>/', UserView.as_view()),
-    path('user/change_password/<int:pk>/', UserView.as_view()),
+    path('user/', UserView.as_view()),
+    path('user/change_password/', UserView.as_view()),
     path('user/forgot_password/', ForgotPasswordView.as_view()),
 
 ]
